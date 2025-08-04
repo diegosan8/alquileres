@@ -458,7 +458,7 @@ const App = () => {
             React.createElement('div', { className: "flex flex-col items-center space-y-4" },
                 React.createElement(NavItem, { icon: ChartPieIcon, label: "Dashboard", viewName: "dashboard" }),
                 React.createElement(NavItem, { icon: HomeIcon, label: "Propiedades", viewName: "properties" }),
-                React.createElement(NavItem, { icon: UsersIcon, label: "Socios", viewName: "owners" }),
+                React.createElement(NavItem, { icon: UsersIcon, label: "Socios", viewName: "socios" }),
                 React.createElement(NavItem, { icon: TrendingUpIcon, label: "Inflación", viewName: "inflation" })
             )
         ),
