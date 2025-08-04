@@ -14,6 +14,7 @@ import PaymentForm from './components/PaymentForm';
 import OwnersPanel from './components/OwnersPanel';
 import InflationPanel from './components/InflationPanel';
 import PropertyCard from './components/PropertyCard';
+import AccountView from './components/AccountView';
 import Modal from './components/Modal';
 import Spinner from './components/Spinner';
 import FirebaseErrorView from './components/FirebaseErrorView';
@@ -90,8 +91,31 @@ const initialOwners: Owner[] = [
     { id: '4', name: 'Socio 4', percentage: 25 },
 ];
 
+
 // --- Helper Functions ---
-// (Moved to appropriate utility file or kept as import)
+const generateChargesForProperty = (property) => {
+    const charges = [];
+    if (!property.contractStartDate || !property.valueHistory || property.valueHistory.length === 0) {
+        return [];
+    }
+    let currentDate = new Date(property.contractStartDate);
+    currentDate.setMinutes(currentDate.getMinutes() + currentDate.getTimezoneOffset());
+    const today = new Date();
+    const sortedHistory = [...property.valueHistory].sort((a, b) => a.date.localeCompare(b.date));
+    while (currentDate <= today) {
+        const chargeDateStr = currentDate.toISOString().slice(0, 10);
+        const applicableValues = sortedHistory.filter(v => v.date <= chargeDateStr);
+        const lastValue = applicableValues.length > 0 ? applicableValues[applicableValues.length - 1] : sortedHistory[0];
+        charges.push({
+            id: `${property.id}_${chargeDateStr}`,
+            date: chargeDateStr,
+            amount: lastValue.rent + lastValue.tax,
+            description: 'Alquiler + TSG',
+        });
+        currentDate.setMonth(currentDate.getMonth() + 1);
+    }
+    return charges;
+};
 
 import FinancialsDashboard from './components/FinancialsDashboard';
 import RentUpdateForm from './components/RentUpdateForm';
@@ -108,7 +132,8 @@ const App = () => {
     const [owners, setOwners] = useState<Owner[]>([]);
     const [inflationData, setInflationData] = useState<InflationRecord[]>([]);
     const [distributions, setDistributions] = useState<Distributions>({});
-    const [activeView, setActiveView] = useState('dashboard'); // dashboard, properties, owners, inflation
+    const [activeView, setActiveView] = useState('dashboard'); // dashboard, properties, owners, inflation, account
+    const [selectedProperty, setSelectedProperty] = useState(null);
     const [modal, setModal] = useState<{ type: string | null; data: any }>({ type: null, data: null });
     const [isSaving, setIsSaving] = useState(false);
 
@@ -327,15 +352,38 @@ const App = () => {
             case 'dashboard':
                 return React.createElement(FinancialsDashboard, { properties, owners });
             case 'properties':
-                return React.createElement('div', { className: "space-y-6" },
-                    properties.map(p => React.createElement(PropertyCard, {
-                        key: p.id,
-                        property: p,
-                        onAddPayment: (propertyId, unpaidCharges) => setModal({ type: 'ADD_PAYMENT', data: { propertyId, unpaidCharges } }),
-                        onEdit: (property) => setModal({ type: 'EDIT_PROPERTY', data: property }),
-                        onDelete: handleDeleteProperty,
-                        onUpdateRent: (property) => setModal({ type: 'UPDATE_RENT', data: property }),
-                    }))
+                return (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                        {properties.map(p => (
+                            <div key={p.id}>
+                                <PropertyCard
+                                    property={{
+                                        ...p,
+                                        generateChargesForProperty,
+                                    }}
+                                    onAddPayment={(propertyId) => {
+                                        const allCharges = generateChargesForProperty(p);
+                                        const paidChargeIds = new Set(p.payments.flatMap(pay => pay.allocatedChargeIds));
+                                        const unpaidCharges = allCharges.filter(c => !paidChargeIds.has(c.id));
+                                        setModal({ type: 'ADD_PAYMENT', data: { propertyId, unpaidCharges } });
+                                    }}
+                                    onViewAccount={() => {
+                                        setSelectedProperty(p);
+                                        setActiveView('account');
+                                    }}
+                                />
+                            </div>
+                        ))}
+                    </div>
+                );
+            case 'account':
+                return selectedProperty && (
+                    <AccountView
+                        property={selectedProperty}
+                        inflationData={inflationData}
+                        onUpdateRent={(newValues) => handleUpdateRent(selectedProperty.id, newValues)}
+                        onBack={() => setActiveView('properties')}
+                    />
                 );
             case 'owners':
                 return React.createElement(OwnersPanel, { owners, onSave: handleSaveOwners });
