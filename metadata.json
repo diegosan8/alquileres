@@ -1,0 +1,6 @@
+{
+  "name": "Gestor de Alquileres Pro",
+  "description": "Una aplicación web para gestionar propiedades en alquiler, realizar un seguimiento de los pagos, la inflación y calcular la distribución de beneficios entre los propietarios.",
+  "requestFramePermissions": [],
+  "prompt": ""
+}
