@@ -9,7 +9,7 @@ import autoTable from 'jspdf-autotable';
 import { db, storage, firebaseError } from './services/firebase.js';
 import { collection, doc, getDocs, setDoc, deleteDoc, writeBatch } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
-import { generateMonthlyReport } from './services/geminiService.js';
+
 
 // --- Type Definitions ---
 interface Payment {
@@ -646,10 +646,8 @@ const InflationPanel = ({ inflationData, onSave }) => {
     );
 };
 
-const FinancialsDashboard = ({ properties, owners, onGenerateReport, aiEnabled }) => {
+const FinancialsDashboard = ({ properties, owners }) => {
     const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
-    const [report, setReport] = useState('');
-    const [generatingReport, setGeneratingReport] = useState(false);
 
     const monthlyData = useMemo(() => {
         const incomeByMonth = {};
@@ -684,32 +682,6 @@ const FinancialsDashboard = ({ properties, owners, onGenerateReport, aiEnabled }
         }));
     }, [owners, selectedMonthIncome]);
 
-    const handleGenerateReport = async () => {
-        setGeneratingReport(true);
-        setReport('');
-        
-        const propertiesDueForReview = properties
-            .filter(p => {
-                 if (!p.contractStartDate) return false;
-                const lastUpdate = p.valueHistory.length > 1 
-                    ? new Date(Math.max(...p.valueHistory.map(vh => new Date(vh.date).getTime())))
-                    : new Date(p.contractStartDate);
-                const today = new Date();
-                const monthsSinceLastUpdate = (today.getFullYear() - lastUpdate.getFullYear()) * 12 + (today.getMonth() - lastUpdate.getMonth());
-                return monthsSinceLastUpdate >= p.updateFrequencyMonths;
-            })
-            .map(p => p.address);
-
-        const result = await onGenerateReport(
-            selectedMonth,
-            selectedMonthIncome,
-            ownerDistribution,
-            propertiesDueForReview
-        );
-        setReport(result);
-        setGeneratingReport(false);
-    };
-
     return React.createElement('div', { className: "space-y-8" },
         React.createElement('div', { className: "grid grid-cols-1 md:grid-cols-3 gap-6" },
             React.createElement('div', { className: "bg-gray-800 p-6 rounded-lg" },
@@ -726,7 +698,7 @@ const FinancialsDashboard = ({ properties, owners, onGenerateReport, aiEnabled }
             )
         ),
         React.createElement('div', { className: "bg-gray-800 p-6 rounded-lg" },
-            React.createElement('h3', { className: "text-xl font-bold text-white mb-4" }, "Distribución e Informes Mensuales"),
+            React.createElement('h3', { className: "text-xl font-bold text-white mb-4" }, "Distribución Mensual"),
             React.createElement('div', { className: "flex items-center space-x-4 mb-4" },
                 React.createElement('label', { className: "text-gray-300" }, 
                     "Seleccionar Mes:",
@@ -744,15 +716,6 @@ const FinancialsDashboard = ({ properties, owners, onGenerateReport, aiEnabled }
                             )
                         )
                     )
-                ),
-                React.createElement('div', null,
-                    React.createElement('h4', { className: "text-lg font-semibold text-indigo-400 mb-2" }, "Asistente IA de Informes"),
-                     aiEnabled ? React.createElement('div', { className: "flex flex-col h-full" },
-                        React.createElement('button', { onClick: handleGenerateReport, disabled: generatingReport, className: "w-full flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400" },
-                           generatingReport ? React.createElement(React.Fragment, null, React.createElement('div', {className: "animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"}), "Generando...") : React.createElement(React.Fragment, null, React.createElement(SparklesIcon, { className: "h-5 w-5 mr-2" }), "Generar Informe con IA")
-                        ),
-                         (generatingReport || report) && React.createElement('div', { className: "mt-4 p-4 bg-gray-900 rounded-md h-full min-h-[150px] whitespace-pre-wrap text-gray-300 overflow-y-auto" }, generatingReport ? "El asistente de IA está redactando el informe..." : report)
-                    ) : React.createElement('div', {className: "p-4 bg-yellow-900/50 border border-yellow-700 rounded-lg text-yellow-300"}, "El servicio de IA no está configurado. Por favor, agregue una API_KEY para habilitar esta función.")
                 )
             )
         )
@@ -775,7 +738,7 @@ const App = () => {
     const [modal, setModal] = useState<{ type: string | null; data: any }>({ type: null, data: null });
     const [isSaving, setIsSaving] = useState(false);
 
-    const aiEnabled = useMemo(() => !!process.env.API_KEY, []);
+
 
     // --- Data Fetching ---
     useEffect(() => {
@@ -988,7 +951,7 @@ const App = () => {
         }
         switch (activeView) {
             case 'dashboard':
-                return React.createElement(FinancialsDashboard, { properties, owners, onGenerateReport: generateMonthlyReport, aiEnabled });
+                return React.createElement(FinancialsDashboard, { properties, owners });
             case 'properties':
                 return React.createElement('div', { className: "space-y-6" },
                     properties.map(p => React.createElement(PropertyCard, {
