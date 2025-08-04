@@ -1,100 +1,155 @@
-import React, { useState } from 'react';
 
-const defaultSocios = [
-  { name: 'Socio 1', porcentaje: 25, saldo: 0 },
-  { name: 'Socio 2', porcentaje: 25, saldo: 0 },
-  { name: 'Socio 3', porcentaje: 25, saldo: 0 },
-  { name: 'Socio 4', porcentaje: 25, saldo: 0 },
-];
+import { useEffect, useState } from 'react';
+import { getSocios, saveSocios, archiveAdelantos, getAdelantos } from '../services/sociosService';
+import { db } from '../services/firebase';
+import { collection, getDocs } from 'firebase/firestore';
+
+const getCurrentYearMonth = () => {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+};
 
 const SociosPanel = () => {
-  const [socios, setSocios] = useState(defaultSocios);
-  const [adelantos, setAdelantos] = useState([0, 0, 0, 0]);
+  const [socios, setSocios] = useState([]);
+  const [adelantos, setAdelantos] = useState([]); // [{amount, date}]
+  const [editIdx, setEditIdx] = useState(-1);
+  const [editValue, setEditValue] = useState(0);
+  const [editDate, setEditDate] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [resetConfirm, setResetConfirm] = useState(false);
+
+  // Cargar socios y adelantos actuales
+  useEffect(() => {
+    const fetchSocios = async () => {
+      setLoading(true);
+      const sociosDb = await getSocios();
+      if (sociosDb.length === 0) {
+        // Si no hay, inicializar
+        const base = [1,2,3,4].map(i => ({ id: String(i), name: `Socio ${i}`, porcentaje: 25 }));
+        await saveSocios(base);
+        setSocios(base);
+      } else {
+        setSocios(sociosDb);
+      }
+      // Adelantos del mes actual
+      const adelantosDb = await getAdelantos(getCurrentYearMonth());
+      setAdelantos(adelantosDb.length === 0 ? sociosDb.map(s => ({ id: s.id, amount: 0, date: '' })) : adelantosDb);
+      setLoading(false);
+    };
+    fetchSocios();
+  }, []);
+
+  // Calcular total alquileres del mes (sin TSG)
+  const [alquileresMes, setAlquileresMes] = useState(0);
+  useEffect(() => {
+    const fetchAlquileres = async () => {
+      const propsSnap = await getDocs(collection(db, 'properties'));
+      const props = propsSnap.docs.map(doc => doc.data());
+      const now = new Date();
+      const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      let total = 0;
+      props.forEach(p => {
+        // Buscar el valor de alquiler vigente para este mes
+        const vh = (p.valueHistory || []).filter(v => v.date <= ym).sort((a,b) => b.date.localeCompare(a.date))[0];
+        if (vh) total += vh.rent;
+      });
+      setAlquileresMes(total);
+    };
+    fetchAlquileres();
+  }, []);
 
   const handleNameChange = (idx, value) => {
     setSocios(prev => prev.map((s, i) => i === idx ? { ...s, name: value } : s));
   };
-
   const handlePorcentajeChange = (idx, value) => {
     setSocios(prev => prev.map((s, i) => i === idx ? { ...s, porcentaje: parseFloat(value) || 0 } : s));
   };
+  const handleSaveSocios = async () => {
+    await saveSocios(socios);
+    alert('Socios actualizados');
+  };
 
   const handleAdelantoChange = (idx, value) => {
-    setAdelantos(prev => prev.map((a, i) => i === idx ? parseFloat(value) || 0 : a));
+    setAdelantos(prev => prev.map((a, i) => i === idx ? { ...a, amount: parseFloat(value) || 0, date: new Date().toISOString().slice(0,10) } : a));
+  };
+  const handleCargarAdelanto = async (idx) => {
+    // Guardar adelanto en memoria y en Firestore
+    const nuevos = adelantos.map((a, i) => i === idx ? { ...a, date: new Date().toISOString().slice(0,10) } : a);
+    setAdelantos(nuevos);
+    await archiveAdelantos(nuevos, getCurrentYearMonth());
+  };
+  const handleEditAdelanto = (idx) => {
+    setEditIdx(idx);
+    setEditValue(adelantos[idx].amount);
+    setEditDate(adelantos[idx].date || new Date().toISOString().slice(0,10));
+  };
+  const handleSaveEditAdelanto = async () => {
+    const nuevos = adelantos.map((a, i) => i === editIdx ? { ...a, amount: parseFloat(editValue) || 0, date: editDate } : a);
+    setAdelantos(nuevos);
+    await archiveAdelantos(nuevos, getCurrentYearMonth());
+    setEditIdx(-1);
+  };
+  const handleReset = async () => {
+    setResetConfirm(false);
+    // Archivar adelantos actuales
+    await archiveAdelantos(adelantos, getCurrentYearMonth());
+    // Resetear adelantos
+    const vacios = socios.map(s => ({ id: s.id, amount: 0, date: '' }));
+    setAdelantos(vacios);
+    await archiveAdelantos(vacios, getCurrentYearMonth());
   };
 
-  const handleCargarAdelanto = (idx) => {
-    setSocios(prev => prev.map((s, i) => i === idx ? { ...s, saldo: s.saldo + adelantos[idx] } : s));
-    setAdelantos(prev => prev.map((a, i) => i === idx ? 0 : a));
-  };
-
-  const handleReset = () => {
-    setSocios(prev => prev.map(s => ({ ...s, saldo: 0 })));
-  };
+  if (loading) return <div className="text-white">Cargando...</div>;
 
   return (
-    <div className="bg-gray-800 p-6 rounded-lg max-w-3xl mx-auto mt-8">
-      <h3 className="text-xl font-bold text-white mb-4">Gestión de Socios</h3>
-      <table className="min-w-full bg-gray-700 rounded-md mb-4">
-        <thead>
-          <tr>
-            <th className="px-4 py-2 text-left text-gray-300">Nombre</th>
-            <th className="px-4 py-2 text-left text-gray-300">%</th>
-            <th className="px-4 py-2 text-left text-gray-300">Saldo</th>
-            <th className="px-4 py-2 text-left text-gray-300">Adelanto</th>
-            <th className="px-4 py-2"></th>
-          </tr>
-        </thead>
-        <tbody>
-          {socios.map((socio, idx) => (
-            <tr key={idx} className="border-b border-gray-600">
-              <td className="px-4 py-2">
-                <input
-                  className="bg-gray-600 text-white rounded px-2 py-1 w-32"
-                  value={socio.name}
-                  onChange={e => handleNameChange(idx, e.target.value)}
-                />
-              </td>
-              <td className="px-4 py-2">
-                <input
-                  type="number"
-                  className="bg-gray-600 text-white rounded px-2 py-1 w-16"
-                  value={socio.porcentaje}
-                  min={0}
-                  max={100}
-                  onChange={e => handlePorcentajeChange(idx, e.target.value)}
-                />
-              </td>
-              <td className="px-4 py-2 text-right text-green-300 font-mono">${socio.saldo.toFixed(2)}</td>
-              <td className="px-4 py-2">
-                <input
-                  type="number"
-                  className="bg-gray-600 text-white rounded px-2 py-1 w-20"
-                  value={adelantos[idx]}
-                  onChange={e => handleAdelantoChange(idx, e.target.value)}
-                />
-              </td>
-              <td className="px-4 py-2">
-                <button
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded"
-                  onClick={() => handleCargarAdelanto(idx)}
-                  disabled={adelantos[idx] === 0}
-                >
-                  Cargar
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <div className="flex justify-end">
-        <button
-          className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded"
-          onClick={handleReset}
-        >
-          RESET SALDOS
-        </button>
+    <div className="bg-gray-800 p-6 rounded-lg max-w-4xl mx-auto mt-8">
+      <h3 className="text-xl font-bold text-white mb-4">Distribución de Socios</h3>
+      <div className="flex flex-wrap gap-4 mb-6">
+        {socios.map((socio, idx) => {
+          const monto = alquileresMes * (socio.porcentaje / 100);
+          const adelanto = adelantos[idx]?.amount || 0;
+          const saldo = monto - adelanto;
+          return (
+            <div key={socio.id} className="bg-gray-700 rounded-full px-6 py-4 flex flex-col items-center min-w-[180px] shadow">
+              <input className="bg-gray-600 text-white rounded px-2 py-1 mb-1 text-center font-bold" value={socio.name} onChange={e => handleNameChange(idx, e.target.value)} />
+              <input type="number" className="bg-gray-600 text-white rounded px-2 py-1 mb-1 w-16 text-center" value={socio.porcentaje} min={0} max={100} onChange={e => handlePorcentajeChange(idx, e.target.value)} />
+              <div className="text-xs text-gray-400">% participación</div>
+              <div className="text-lg font-bold text-green-300 mt-2">${monto.toFixed(2)}</div>
+              <div className="text-xs text-gray-400">Alquiler mes</div>
+              <div className="text-md font-mono text-yellow-300 mt-2">Adelanto: ${adelanto.toFixed(2)}</div>
+              <div className="text-xs text-gray-400">Saldo: <span className="text-white font-bold">${saldo.toFixed(2)}</span></div>
+              {editIdx === idx ? (
+                <div className="mt-2 flex flex-col items-center gap-1">
+                  <input type="number" value={editValue} onChange={e => setEditValue(e.target.value)} className="bg-gray-600 text-white rounded px-2 py-1 w-20 mb-1" />
+                  <input type="date" value={editDate} onChange={e => setEditDate(e.target.value)} className="bg-gray-600 text-white rounded px-2 py-1 w-32 mb-1" />
+                  <button onClick={handleSaveEditAdelanto} className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded mb-1">Guardar</button>
+                  <button onClick={() => setEditIdx(-1)} className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded">Cancelar</button>
+                </div>
+              ) : (
+                <>
+                  <button onClick={() => handleCargarAdelanto(idx)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded mt-2">ADELANTAR PAGO</button>
+                  <button onClick={() => handleEditAdelanto(idx)} className="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-1 rounded mt-1">Editar Adelanto</button>
+                </>
+              )}
+            </div>
+          );
+        })}
       </div>
+      <div className="flex gap-4 mt-6">
+        <button onClick={handleSaveSocios} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded">Guardar Socios</button>
+        <button onClick={() => setResetConfirm(true)} className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded">RESET MES</button>
+      </div>
+      {resetConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+          <div className="bg-gray-900 p-6 rounded-lg shadow-lg flex flex-col items-center">
+            <div className="text-white mb-4">¿Seguro que quieres archivar y resetear los adelantos del mes?</div>
+            <div className="flex gap-4">
+              <button onClick={handleReset} className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded">Sí, resetear</button>
+              <button onClick={() => setResetConfirm(false)} className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded">Cancelar</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
