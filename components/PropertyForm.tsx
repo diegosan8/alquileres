@@ -9,6 +9,7 @@ const PropertyForm = ({ onSave, onClose, initialData }) => {
         tax: 0,
         contractStartDate: '',
         updateFrequencyMonths: 12,
+        contractDurationMonths: 36,
         contractFile: null,
     });
     const [fileToUpload, setFileToUpload] = useState(null);
@@ -69,7 +70,7 @@ const PropertyForm = ({ onSave, onClose, initialData }) => {
                     <input type="number" name="tax" value={property.tax} onChange={handleChange} className="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white" />
                 </label>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <label className="block text-sm font-medium text-gray-300">
                     Fecha de Inicio de Contrato
                     <input type="date" name="contractStartDate" value={property.contractStartDate} onChange={handleChange} className="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white" required />
@@ -77,6 +78,10 @@ const PropertyForm = ({ onSave, onClose, initialData }) => {
                 <label className="block text-sm font-medium text-gray-300">
                     Frecuencia de Actualización (meses)
                     <input type="number" name="updateFrequencyMonths" value={property.updateFrequencyMonths} onChange={handleChange} className="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white" min={1} required />
+                </label>
+                <label className="block text-sm font-medium text-gray-300">
+                    Duración del Contrato (meses)
+                    <input type="number" name="contractDurationMonths" value={property.contractDurationMonths || ''} onChange={handleChange} className="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white" min={1} required />
                 </label>
             </div>
             <div>

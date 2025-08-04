@@ -6,6 +6,18 @@ const formatMonthYear = (date: Date) => date.toLocaleString('es-AR', { month: 'l
 const formatDate = (date: string) => new Date(date).toLocaleDateString('es-AR');
 
 const AccountView = ({ property, inflationData, onUpdateRent, onBack }) => {
+    // Advertencia de vencimiento de contrato
+    let contractWarning = null;
+    if (property.contractStartDate && property.contractDurationMonths) {
+        const start = new Date(property.contractStartDate);
+        const end = new Date(start);
+        end.setMonth(end.getMonth() + Number(property.contractDurationMonths));
+        const now = new Date();
+        const diffMonths = (end.getFullYear() - now.getFullYear()) * 12 + (end.getMonth() - now.getMonth());
+        if (diffMonths <= 2) {
+            contractWarning = `¡Atención! El contrato vence el ${end.toLocaleDateString('es-AR')}${diffMonths < 0 ? ' (ya vencido)' : diffMonths === 0 ? ' (vence este mes)' : diffMonths === 1 ? ' (vence el mes que viene)' : ' (faltan 2 meses)'}.`;
+        }
+    }
     const nextUpdateDate = useMemo(() => {
         if (!property.contractStartDate || !property.updateFrequencyMonths) return null;
         const lastUpdate = property.valueHistory.length > 0
@@ -132,6 +144,11 @@ const AccountView = ({ property, inflationData, onUpdateRent, onBack }) => {
 
     return (
         <div className="max-w-2xl mx-auto bg-gray-800 rounded-xl shadow-lg p-6 mt-6">
+            {contractWarning && (
+                <div className="mb-4 p-3 bg-yellow-200 text-yellow-900 rounded font-bold text-center animate-pulse">
+                    {contractWarning}
+                </div>
+            )}
             <button onClick={onBack} className="mb-4 text-indigo-400 hover:underline">&larr; Volver</button>
             <h2 className="text-xl font-bold text-white mb-2">Cuenta Corriente</h2>
             <div className="mb-2">

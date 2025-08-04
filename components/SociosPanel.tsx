@@ -73,8 +73,8 @@ const SociosPanel = () => {
     setAdelantos(prev => prev.map((a, i) => i === idx ? { ...a, amount: parseFloat(value) || 0, date: new Date().toISOString().slice(0,10) } : a));
   };
   const handleCargarAdelanto = async (idx) => {
-    // Guardar adelanto en memoria y en Firestore
-    const nuevos = adelantos.map((a, i) => i === idx ? { ...a, date: new Date().toISOString().slice(0,10) } : a);
+    // Guardar adelanto en memoria y en Firestore, usando el monto actual
+    const nuevos = adelantos.map((a, i) => i === idx ? { ...a, date: new Date().toISOString().slice(0,10), amount: a.amount || 0 } : a);
     setAdelantos(nuevos);
     await archiveAdelantos(nuevos, getCurrentYearMonth());
   };
