@@ -55,16 +55,13 @@ const AccountView = ({ property, inflationData, onUpdateRent, onBack }) => {
         setShowUpdate(false);
     };
 
-    // Movimientos: cargos (alquiler+tsg) y pagos
+    // Movimientos: cargos (alquiler y tsg separados) y pagos
     const movimientos = useMemo(() => {
-        // Cargos: uno por cada mes generado
         const charges = property.generateChargesForProperty ? property.generateChargesForProperty(property) : [];
-        // Pagos
         const pagos = property.payments || [];
-        // Unir y ordenar por fecha
         const items = [
             ...charges.map(c => ({
-                tipo: 'cargo',
+                tipo: c.type === 'alquiler' ? 'alquiler' : c.type === 'tsg' ? 'tsg' : 'cargo',
                 fecha: c.date,
                 detalle: c.description,
                 debe: c.amount,
@@ -80,9 +77,12 @@ const AccountView = ({ property, inflationData, onUpdateRent, onBack }) => {
                 id: 'pago_' + p.id,
             })),
         ];
-        // Ordenar por fecha (cargos primero si misma fecha)
+        // Ordenar por fecha (alquiler, tsg, luego pagos)
         items.sort((a, b) => {
-            if (a.fecha === b.fecha) return a.tipo === 'cargo' ? -1 : 1;
+            if (a.fecha === b.fecha) {
+                const order = { 'alquiler': 0, 'tsg': 1, 'cargo': 2, 'pago': 3 };
+                return (order[a.tipo] ?? 99) - (order[b.tipo] ?? 99);
+            }
             return a.fecha.localeCompare(b.fecha);
         });
         return items;

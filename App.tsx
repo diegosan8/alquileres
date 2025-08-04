@@ -107,11 +107,21 @@ const generateChargesForProperty = (property) => {
         const chargeDateStr = currentDate.toISOString().slice(0, 10);
         const applicableValues = sortedHistory.filter(v => v.date <= chargeDateStr);
         const lastValue = applicableValues.length > 0 ? applicableValues[applicableValues.length - 1] : sortedHistory[0];
+        // Cargo de alquiler
         charges.push({
-            id: `${property.id}_${chargeDateStr}`,
+            id: `${property.id}_${chargeDateStr}_alquiler`,
             date: chargeDateStr,
-            amount: lastValue.rent + lastValue.tax,
-            description: 'Alquiler + TSG',
+            amount: lastValue.rent,
+            description: 'Alquiler',
+            type: 'alquiler',
+        });
+        // Cargo de TSG
+        charges.push({
+            id: `${property.id}_${chargeDateStr}_tsg`,
+            date: chargeDateStr,
+            amount: lastValue.tax,
+            description: 'TSG',
+            type: 'tsg',
         });
         currentDate.setMonth(currentDate.getMonth() + 1);
     }
