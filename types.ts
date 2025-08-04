@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 export interface Payment {
     id: string;
     date: string;
@@ -67,3 +68,8 @@ export interface Charge {
     description: string;
     amount: number;
 }
+=======
+// This file is intentionally left blank.
+// TypeScript types are removed during the conversion to pure JavaScript
+// to ensure browser compatibility without a build step.
+>>>>>>> 2e12e770348c4360d07999b59baecd81bf9eaf6c

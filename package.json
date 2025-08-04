@@ -10,6 +10,10 @@
   },
   "dependencies": {
     "react": "^19.1.1",
+<<<<<<< HEAD
+=======
+    "@google/genai": "^1.12.0",
+>>>>>>> 2e12e770348c4360d07999b59baecd81bf9eaf6c
     "react-dom": "^19.1.1",
     "jspdf": "^2.5.1",
     "jspdf-autotable": "^3.8.2",

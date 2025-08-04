@@ -61,8 +61,21 @@ export const TrendingUpIcon = ({ className }) => (
     )
 );
 
+<<<<<<< HEAD
+=======
+export const SparklesIcon = ({ className }) => (
+    React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", className: className, fill: "none", viewBox: "0 0 24 24", stroke: "currentColor", strokeWidth: 2 },
+        React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", d: "M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.293 2.293a1 1 0 01-1.414 1.414L10 5.414m2-2.293l2.293 2.293a1 1 0 001.414-1.414L14 3m-4 14v-4m-2 2h4m5-11l2.293-2.293a1 1 0 011.414 1.414L18 9.414m2-2.293l2.293 2.293a1 1 0 001.414-1.414L20 7m-4 14v-4m-2 2h4" })
+    )
+);
+
+>>>>>>> 2e12e770348c4360d07999b59baecd81bf9eaf6c
 export const ClipboardListIcon = ({ className }) => (
     React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", className: className, fill: "none", viewBox: "0 0 24 24", stroke: "currentColor", strokeWidth: 2 },
         React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", d: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" })
     )
+<<<<<<< HEAD
 );
+=======
+);
+>>>>>>> 2e12e770348c4360d07999b59baecd81bf9eaf6c
