@@ -12,6 +12,7 @@ import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage
 import PropertyForm from './components/PropertyForm';
 import PaymentForm from './components/PaymentForm';
 import OwnersPanel from './components/OwnersPanel';
+import SociosPanel from './components/SociosPanel';
 import InflationPanel from './components/InflationPanel';
 import PropertyCard from './components/PropertyCard';
 import AccountView from './components/AccountView';
@@ -387,6 +388,8 @@ const App = () => {
                 );
             case 'owners':
                 return React.createElement(OwnersPanel, { owners, onSave: handleSaveOwners });
+            case 'socios':
+                return React.createElement(SociosPanel, {});
             case 'inflation':
                 return React.createElement(InflationPanel, { inflationData, onSave: handleSaveInflation });
             default:
