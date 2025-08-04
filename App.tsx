@@ -46,7 +46,7 @@ interface Property {
     tax: number;
     contractStartDate: string;
     updateFrequencyMonths: number;
-    contractFile?: ContractFile;
+    contractFile?: ContractFile | File | null;
     payments: Payment[];
     valueHistory: ValueHistory[];
 }
@@ -208,9 +208,9 @@ const PropertyForm = ({ onSave, onClose, initialData }) => {
         tax: 0,
         contractStartDate: '',
         updateFrequencyMonths: 12,
-        contractFile: undefined,
+        contractFile: null as File | null,
     });
-    const [fileToUpload, setFileToUpload] = useState(undefined);
+    const [fileToUpload, setFileToUpload] = useState<File | null>(null);
     const [fileName, setFileName] = useState(initialData?.contractFile?.name || '');
 
 
