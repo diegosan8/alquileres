@@ -202,19 +202,21 @@ const App = () => {
         let finalPropertyData = { ...propertyData };
         delete finalPropertyData.id; // Don't save id field in the document
 
+        // Asegurar que siempre existan los campos payments y valueHistory
+        if (!Array.isArray(finalPropertyData.payments)) {
+            finalPropertyData.payments = [];
+        }
+        if (!Array.isArray(finalPropertyData.valueHistory) || finalPropertyData.valueHistory.length === 0) {
+            finalPropertyData.valueHistory = [{
+                date: propertyData.contractStartDate,
+                rent: propertyData.rent,
+                tax: propertyData.tax,
+            }];
+        }
+
         try {
-            if(isNew) {
-                // For new properties, create the initial value history entry
-                finalPropertyData.valueHistory = [{
-                    date: propertyData.contractStartDate,
-                    rent: propertyData.rent,
-                    tax: propertyData.tax,
-                }];
-                finalPropertyData.payments = [];
-            }
-            
             if (file) {
-                 if (propertyData.contractFile?.storagePath) {
+                if (propertyData.contractFile?.storagePath) {
                     // Delete old file first
                     await deleteObject(ref(storage, propertyData.contractFile.storagePath));
                 }
@@ -231,7 +233,7 @@ const App = () => {
             }
 
             await setDoc(docRef, finalPropertyData, { merge: true });
-            
+
             if (isNew) {
                 setProperties(prev => [...prev, { ...finalPropertyData, id }].sort((a,b) => a.address.localeCompare(b.address)));
             } else {
