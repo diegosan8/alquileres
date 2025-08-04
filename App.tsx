@@ -1,3 +1,9 @@
+// Para exponer funciones globales a window (TypeScript)
+declare global {
+    interface Window {
+        handleDeleteProperty?: (property: any) => Promise<void>;
+    }
+}
 
 
 
@@ -242,8 +248,6 @@ const App = () => {
     }, []);
     
     const handleDeleteProperty = useCallback(async (property) => {
-        if (!window.confirm(`¿Está seguro de que desea eliminar la propiedad en ${property.address}? Esta acción no se puede deshacer.`)) return;
-
         try {
              if (property.contractFile?.storagePath) {
                 await deleteObject(ref(storage, property.contractFile.storagePath));
@@ -255,6 +259,11 @@ const App = () => {
             alert("Error al eliminar la propiedad.");
         }
     }, []);
+
+    // Exponer para uso desde AccountView
+    if (typeof window !== 'undefined') {
+        window.handleDeleteProperty = handleDeleteProperty;
+    }
 
     const handleSavePayment = useCallback(async (propertyId, payment) => {
         const property = properties.find(p => p.id === propertyId);

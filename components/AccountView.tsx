@@ -204,9 +204,10 @@ const AccountView = ({ property, inflationData, onUpdateRent, onBack }) => {
                                 ) : (
                                     <>
                                         <td className="px-2 py-1">
-                                            {mov.tipo === 'cargo'
-                                                ? (() => { const d = new Date(mov.fecha); return d.toLocaleString('es-AR', { month: 'long', year: 'numeric' }); })()
-                                                : formatDate(mov.fecha)}
+                                            {(() => {
+                                                // Mostrar fecha real (YYYY-MM-DD) para todos los movimientos
+                                                return formatDate(mov.fecha);
+                                            })()}
                                         </td>
                                         <td className="px-2 py-1">{mov.detalle}</td>
                                         <td className="px-2 py-1 text-red-300">{mov.debe ? formatCurrency(mov.debe) : ''}</td>
@@ -222,8 +223,48 @@ const AccountView = ({ property, inflationData, onUpdateRent, onBack }) => {
                     </tbody>
                 </table>
             </div>
+            <div className="flex justify-end mt-6">
+                <EliminarPropiedadButton property={property} onBack={onBack} />
+            </div>
         </div>
     );
+
+// Botón de eliminar propiedad con doble confirmación
+function EliminarPropiedadButton({ property, onBack }) {
+    const [confirm1, setConfirm1] = useState(false);
+    const [confirmText, setConfirmText] = useState('');
+    const [deleting, setDeleting] = useState(false);
+    const handleDelete = async () => {
+        setDeleting(true);
+        try {
+            // Eliminar propiedad usando la función global (window.handleDeleteProperty)
+            if (window.handleDeleteProperty) {
+                await window.handleDeleteProperty(property);
+            }
+            onBack();
+        } catch (e) {
+            alert('Error al eliminar la propiedad');
+        } finally {
+            setDeleting(false);
+        }
+    };
+    if (!confirm1) {
+        return <button className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded" onClick={() => setConfirm1(true)}>Eliminar Propiedad</button>;
+    }
+    return (
+        <div className="flex flex-col items-end gap-2">
+            <div className="bg-gray-900 p-4 rounded shadow text-white mb-2">
+                <div>¿Seguro que quieres eliminar la propiedad?</div>
+                <div className="mt-2">Escribe <b>SI</b> para confirmar:</div>
+                <input className="bg-gray-700 text-white rounded px-2 py-1 mt-2" value={confirmText} onChange={e => setConfirmText(e.target.value)} />
+                <div className="flex gap-2 mt-3">
+                    <button className="bg-red-600 hover:bg-red-700 text-white px-4 py-1 rounded" disabled={confirmText !== 'SI' || deleting} onClick={handleDelete}>Eliminar</button>
+                    <button className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-1 rounded" onClick={() => setConfirm1(false)}>Cancelar</button>
+                </div>
+            </div>
+        </div>
+    );
+}
 };
 
 export default AccountView;
