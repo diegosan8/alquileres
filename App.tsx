@@ -104,7 +104,10 @@ const generateChargesForProperty = (property) => {
     const today = new Date();
     const sortedHistory = [...property.valueHistory].sort((a, b) => a.date.localeCompare(b.date));
     while (currentDate <= today) {
-        const chargeDateStr = currentDate.toISOString().slice(0, 10);
+        // Fecha: primer día del mes
+        const year = currentDate.getFullYear();
+        const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+        const chargeDateStr = `${year}-${month}-01`;
         const applicableValues = sortedHistory.filter(v => v.date <= chargeDateStr);
         const lastValue = applicableValues.length > 0 ? applicableValues[applicableValues.length - 1] : sortedHistory[0];
         // Cargo de alquiler
@@ -381,6 +384,16 @@ const App = () => {
                                     onViewAccount={() => {
                                         setSelectedProperty(p);
                                         setActiveView('account');
+                                    }}
+                                    onViewContract={(property) => {
+                                        if (property.contractFile?.downloadURL) {
+                                            window.open(property.contractFile.downloadURL, '_blank');
+                                        } else {
+                                            alert('No hay contrato cargado para esta propiedad.');
+                                        }
+                                    }}
+                                    onEditProperty={(property) => {
+                                        setModal({ type: 'EDIT_PROPERTY', data: property });
                                     }}
                                 />
                             </div>
