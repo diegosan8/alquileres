@@ -137,7 +137,6 @@ const generateChargesForProperty = (property) => {
     return charges;
 };
 
-import FinancialsDashboard from './components/FinancialsDashboard';
 import RentUpdateForm from './components/RentUpdateForm';
 
 // ...existing code...
@@ -152,7 +151,7 @@ const App = () => {
     const [owners, setOwners] = useState<Owner[]>([]);
     const [inflationData, setInflationData] = useState<InflationRecord[]>([]);
     const [distributions, setDistributions] = useState<Distributions>({});
-    const [activeView, setActiveView] = useState('dashboard'); // dashboard, properties, owners, inflation, account
+    const [activeView, setActiveView] = useState('properties'); // properties, owners, inflation, account
     const [selectedProperty, setSelectedProperty] = useState(null);
     const [modal, setModal] = useState<{ type: string | null; data: any }>({ type: null, data: null });
     const [isSaving, setIsSaving] = useState(false);
@@ -372,8 +371,7 @@ const App = () => {
             return React.createElement(Spinner, null);
         }
         switch (activeView) {
-            case 'dashboard':
-                return React.createElement(FinancialsDashboard, { properties, owners });
+            // dashboard eliminado
             case 'properties':
                 return (
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -488,7 +486,7 @@ const App = () => {
     return React.createElement('div', { className: "flex h-screen bg-gray-900" },
         React.createElement('aside', { className: "w-20 flex-shrink-0 bg-gray-800 p-2" },
             React.createElement('div', { className: "flex flex-col items-center space-y-4" },
-                React.createElement(NavItem, { icon: ChartPieIcon, label: "Dashboard", viewName: "dashboard" }),
+
                 React.createElement(NavItem, { icon: HomeIcon, label: "Propiedades", viewName: "properties" }),
                 React.createElement(NavItem, { icon: UsersIcon, label: "Socios", viewName: "socios" }),
                 React.createElement(NavItem, { icon: TrendingUpIcon, label: "Inflación", viewName: "inflation" })

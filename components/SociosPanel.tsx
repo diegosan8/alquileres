@@ -102,42 +102,54 @@ const SociosPanel = () => {
   if (loading) return <div className="text-white">Cargando...</div>;
 
   return (
-    <div className="bg-gray-800 p-6 rounded-lg max-w-4xl mx-auto mt-8">
-      <h3 className="text-xl font-bold text-white mb-4">Distribución de Socios</h3>
-      <div className="flex flex-wrap gap-4 mb-6">
+    <div className="max-w-5xl mx-auto mt-8">
+      <h3 className="text-2xl font-bold text-white mb-6 text-center">Distribución de Socios</h3>
+      <div className="flex flex-wrap gap-6 justify-center mb-8">
         {socios.map((socio, idx) => {
           const monto = alquileresMes * (socio.porcentaje / 100);
           const adelanto = adelantos[idx]?.amount || 0;
           const saldo = monto - adelanto;
           return (
-            <div key={socio.id} className="bg-gray-700 rounded-full px-6 py-4 flex flex-col items-center min-w-[180px] shadow">
-              <input className="bg-gray-600 text-white rounded px-2 py-1 mb-1 text-center font-bold" value={socio.name} onChange={e => handleNameChange(idx, e.target.value)} />
-              <input type="number" className="bg-gray-600 text-white rounded px-2 py-1 mb-1 w-16 text-center" value={socio.porcentaje} min={0} max={100} onChange={e => handlePorcentajeChange(idx, e.target.value)} />
-              <div className="text-xs text-gray-400">% participación</div>
-              <div className="text-lg font-bold text-green-300 mt-2">${monto.toFixed(2)}</div>
-              <div className="text-xs text-gray-400">Alquiler mes</div>
-              <div className="text-md font-mono text-yellow-300 mt-2">Adelanto: ${adelanto.toFixed(2)}</div>
-              <div className="text-xs text-gray-400">Saldo: <span className="text-white font-bold">${saldo.toFixed(2)}</span></div>
+            <div key={socio.id} className="bg-gray-800 rounded-xl shadow-lg p-6 flex flex-col items-stretch min-w-[260px] max-w-xs mx-auto relative border border-gray-700">
+              <div className="mb-2">
+                <input className="bg-gray-700 text-white rounded px-2 py-1 mb-1 text-center font-bold w-full" value={socio.name} onChange={e => handleNameChange(idx, e.target.value)} />
+                <div className="flex items-center justify-between mt-1">
+                  <input type="number" className="bg-gray-700 text-white rounded px-2 py-1 w-16 text-center" value={socio.porcentaje} min={0} max={100} onChange={e => handlePorcentajeChange(idx, e.target.value)} />
+                  <span className="text-xs text-gray-400 ml-2">% participación</span>
+                </div>
+              </div>
+              <div className="mb-2">
+                <p className="text-xs text-gray-400">Alquiler mes:</p>
+                <p className="text-base text-green-300 font-semibold">${monto.toFixed(2)}</p>
+              </div>
+              <div className="mb-2">
+                <p className="text-xs text-gray-400">Adelanto:</p>
+                <p className="text-base text-yellow-300 font-mono">${adelanto.toFixed(2)}</p>
+              </div>
+              <div className="mb-4">
+                <p className="text-xs text-gray-400">Saldo:</p>
+                <p className={`text-lg font-bold ${saldo < 0 ? 'text-red-400' : 'text-green-400'}`}>${saldo.toFixed(2)}</p>
+              </div>
               {editIdx === idx ? (
                 <div className="mt-2 flex flex-col items-center gap-1">
-                  <input type="number" value={editValue} onChange={e => setEditValue(e.target.value)} className="bg-gray-600 text-white rounded px-2 py-1 w-20 mb-1" />
-                  <input type="date" value={editDate} onChange={e => setEditDate(e.target.value)} className="bg-gray-600 text-white rounded px-2 py-1 w-32 mb-1" />
-                  <button onClick={handleSaveEditAdelanto} className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded mb-1">Guardar</button>
-                  <button onClick={() => setEditIdx(-1)} className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded">Cancelar</button>
+                  <input type="number" value={editValue} onChange={e => setEditValue(e.target.value)} className="bg-gray-700 text-white rounded px-2 py-1 w-20 mb-1" />
+                  <input type="date" value={editDate} onChange={e => setEditDate(e.target.value)} className="bg-gray-700 text-white rounded px-2 py-1 w-32 mb-1" />
+                  <button onClick={handleSaveEditAdelanto} className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded mb-1 w-full">Guardar</button>
+                  <button onClick={() => setEditIdx(-1)} className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded w-full">Cancelar</button>
                 </div>
               ) : (
-                <>
-                  <button onClick={() => handleCargarAdelanto(idx)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded mt-2">ADELANTAR PAGO</button>
-                  <button onClick={() => handleEditAdelanto(idx)} className="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-1 rounded mt-1">Editar Adelanto</button>
-                </>
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  <button onClick={() => handleCargarAdelanto(idx)} className="py-2 text-sm font-medium text-indigo-400 hover:bg-gray-800 transition rounded border border-indigo-500">ADELANTAR PAGO</button>
+                  <button onClick={() => handleEditAdelanto(idx)} className="py-2 text-sm font-medium text-yellow-400 hover:bg-gray-800 transition rounded border border-yellow-500">Editar Adelanto</button>
+                </div>
               )}
             </div>
           );
         })}
       </div>
-      <div className="flex gap-4 mt-6">
-        <button onClick={handleSaveSocios} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded">Guardar Socios</button>
-        <button onClick={() => setResetConfirm(true)} className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded">RESET MES</button>
+      <div className="flex gap-4 justify-center mt-6">
+        <button onClick={handleSaveSocios} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded shadow">Guardar Socios</button>
+        <button onClick={() => setResetConfirm(true)} className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded shadow">RESET MES</button>
       </div>
       {resetConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
