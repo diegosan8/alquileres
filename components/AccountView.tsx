@@ -67,46 +67,77 @@ const AccountView = ({ property, inflationData, onUpdateRent, onBack }) => {
         setShowUpdate(false);
     };
 
-    // Movimientos: cargos (alquiler y tsg separados) y pagos
-    const movimientos = useMemo(() => {
-        const charges = property.generateChargesForProperty ? property.generateChargesForProperty(property) : [];
-        const pagos = property.payments || [];
-        const items = [
-            ...charges.map(c => ({
-                tipo: c.type === 'alquiler' ? 'alquiler' : c.type === 'tsg' ? 'tsg' : 'cargo',
-                fecha: c.date,
-                detalle: c.description,
-                debe: c.amount,
-                haber: 0,
-                id: 'cargo_' + c.id,
-            })),
-            ...pagos.map(p => ({
-                tipo: 'pago',
+    // Nueva tabla: una línea por mes desde el inicio del contrato, con ALQUILER, TSG y pagos en el mes
+    const [editIdx, setEditIdx] = useState(-1);
+    const [editMov, setEditMov] = useState(null);
+    // Generar meses desde inicio de contrato hasta hoy
+    const getMonthsArray = (startDate, endDate) => {
+        const arr = [];
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        start.setDate(1);
+        end.setDate(1);
+        while (start <= end) {
+            arr.push(start.toISOString().slice(0, 7));
+            start.setMonth(start.getMonth() + 1);
+        }
+        return arr;
+    };
+    const today = new Date();
+    const monthsArr = property.contractStartDate ? getMonthsArray(property.contractStartDate, today) : [];
+    // Agrupar pagos por mes
+    const pagosPorMes = {};
+    (property.payments || []).forEach(p => {
+        const ym = p.date.slice(0, 7);
+        if (!pagosPorMes[ym]) pagosPorMes[ym] = [];
+        pagosPorMes[ym].push(p);
+    });
+    // Para cada mes, buscar valor de alquiler y tsg vigente
+    let saldo = 0;
+    const movimientosConSaldo = [];
+    monthsArr.forEach((ym, idx) => {
+        // Buscar valor vigente
+        const vh = (property.valueHistory || []).filter(v => v.date <= ym).sort((a,b) => b.date.localeCompare(a.date))[0];
+        const alquiler = vh ? vh.rent : property.rent;
+        const tsg = vh ? vh.tax : property.tax;
+        // ALQUILER
+        saldo -= alquiler;
+        movimientosConSaldo.push({
+            idx: movimientosConSaldo.length,
+            fecha: ym + '-01',
+            detalle: 'ALQUILER',
+            debe: alquiler,
+            haber: 0,
+            saldo: saldo,
+            tipo: 'alquiler',
+            id: `alquiler_${ym}`
+        });
+        // TSG
+        saldo -= tsg;
+        movimientosConSaldo.push({
+            idx: movimientosConSaldo.length,
+            fecha: ym + '-01',
+            detalle: 'TSG',
+            debe: tsg,
+            haber: 0,
+            saldo: saldo,
+            tipo: 'tsg',
+            id: `tsg_${ym}`
+        });
+        // PAGOS
+        (pagosPorMes[ym] || []).forEach(p => {
+            saldo += p.amount;
+            movimientosConSaldo.push({
+                idx: movimientosConSaldo.length,
                 fecha: p.date,
                 detalle: p.notes || 'Pago',
                 debe: 0,
                 haber: p.amount,
-                id: 'pago_' + p.id,
-            })),
-        ];
-        // Ordenar por fecha (alquiler, tsg, luego pagos)
-        items.sort((a, b) => {
-            if (a.fecha === b.fecha) {
-                const order = { 'alquiler': 0, 'tsg': 1, 'cargo': 2, 'pago': 3 };
-                return (order[a.tipo] ?? 99) - (order[b.tipo] ?? 99);
-            }
-            return a.fecha.localeCompare(b.fecha);
+                saldo: saldo,
+                tipo: 'pago',
+                id: `pago_${p.id}`
+            });
         });
-        return items;
-    }, [property]);
-
-    // Calcular saldo progresivo
-    const [editIdx, setEditIdx] = useState(-1);
-    const [editMov, setEditMov] = useState(null);
-    let saldo = 0;
-    const movimientosConSaldo = movimientos.map((mov, idx) => {
-        saldo += mov.haber - mov.debe;
-        return { ...mov, saldo: saldo, idx };
     });
 
     const handleEdit = (mov) => {
