@@ -117,9 +117,18 @@ const SociosPanel = () => {
 
   if (loading) return <div className="text-white">Cargando...</div>;
 
+  // Verificar suma de porcentajes
+  const totalPorcentaje = socios.reduce((sum, s) => sum + (parseFloat(s.porcentaje) || 0), 0);
+  const porcentajeWarning = Math.abs(totalPorcentaje - 100) > 0.01;
+
   return (
     <div className="max-w-5xl mx-auto mt-8">
       <h3 className="text-2xl font-bold text-white mb-6 text-center">Distribución de Socios</h3>
+      {porcentajeWarning && (
+        <div className="mb-4 p-3 bg-yellow-200 text-yellow-900 rounded font-bold text-center animate-pulse">
+          ¡Atención! La suma de los porcentajes no es 100% (actual: {totalPorcentaje}%)
+        </div>
+      )}
       <div className="flex flex-wrap gap-6 justify-center mb-8">
         {socios.map((socio, idx) => {
           const monto = alquileresMes * (socio.porcentaje / 100);

@@ -100,10 +100,12 @@ const AccountView = ({ property, inflationData, onUpdateRent, onBack }) => {
         const vh = (property.valueHistory || []).filter(v => v.date <= ym).sort((a,b) => b.date.localeCompare(a.date))[0];
         const alquiler = vh ? vh.rent : property.rent;
         const tsg = vh ? vh.tax : property.tax;
-        // ALQUILER
+        // ALQUILER (fecha 1 de cada mes)
+        const [year, month] = ym.split('-');
+        const fechaCargo = `${year}-${month}-01`;
         movimientosConSaldo.push({
             idx: movimientosConSaldo.length,
-            fecha: ym + '-01',
+            fecha: fechaCargo,
             detalle: 'ALQUILER',
             debe: alquiler,
             haber: 0,
@@ -112,10 +114,10 @@ const AccountView = ({ property, inflationData, onUpdateRent, onBack }) => {
             id: `alquiler_${ym}`
         });
         saldo -= alquiler;
-        // TSG
+        // TSG (fecha 1 de cada mes)
         movimientosConSaldo.push({
             idx: movimientosConSaldo.length,
-            fecha: ym + '-01',
+            fecha: fechaCargo,
             detalle: 'TSG',
             debe: tsg,
             haber: 0,
