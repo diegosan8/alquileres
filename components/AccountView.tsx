@@ -92,7 +92,7 @@ const AccountView = ({ property, inflationData, onUpdateRent, onBack }) => {
         if (!pagosPorMes[ym]) pagosPorMes[ym] = [];
         pagosPorMes[ym].push(p);
     });
-    // Para cada mes, buscar valor de alquiler y tsg vigente
+    // Para cada mes, buscar valor de alquiler y tsg vigente y asegurar que SIEMPRE se agregue el débito mensual
     let saldo = 0;
     const movimientosConSaldo = [];
     monthsArr.forEach((ym, idx) => {
@@ -101,42 +101,42 @@ const AccountView = ({ property, inflationData, onUpdateRent, onBack }) => {
         const alquiler = vh ? vh.rent : property.rent;
         const tsg = vh ? vh.tax : property.tax;
         // ALQUILER
-        saldo -= alquiler;
         movimientosConSaldo.push({
             idx: movimientosConSaldo.length,
             fecha: ym + '-01',
             detalle: 'ALQUILER',
             debe: alquiler,
             haber: 0,
-            saldo: saldo,
+            saldo: saldo - alquiler,
             tipo: 'alquiler',
             id: `alquiler_${ym}`
         });
+        saldo -= alquiler;
         // TSG
-        saldo -= tsg;
         movimientosConSaldo.push({
             idx: movimientosConSaldo.length,
             fecha: ym + '-01',
             detalle: 'TSG',
             debe: tsg,
             haber: 0,
-            saldo: saldo,
+            saldo: saldo - tsg,
             tipo: 'tsg',
             id: `tsg_${ym}`
         });
+        saldo -= tsg;
         // PAGOS
         (pagosPorMes[ym] || []).forEach(p => {
-            saldo += p.amount;
             movimientosConSaldo.push({
                 idx: movimientosConSaldo.length,
                 fecha: p.date,
                 detalle: p.notes || 'Pago',
                 debe: 0,
                 haber: p.amount,
-                saldo: saldo,
+                saldo: saldo + p.amount,
                 tipo: 'pago',
                 id: `pago_${p.id}`
             });
+            saldo += p.amount;
         });
     });
 
