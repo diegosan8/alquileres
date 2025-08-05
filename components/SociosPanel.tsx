@@ -15,6 +15,10 @@ const SociosPanel = () => {
   const [editIdx, setEditIdx] = useState(-1);
   const [editValue, setEditValue] = useState(0);
   const [editDate, setEditDate] = useState('');
+  const [showAdelantoModal, setShowAdelantoModal] = useState(false);
+  const [adelantoIdx, setAdelantoIdx] = useState(-1);
+  const [adelantoMonto, setAdelantoMonto] = useState(0);
+  const [adelantoFecha, setAdelantoFecha] = useState('');
   const [loading, setLoading] = useState(true);
   const [resetConfirm, setResetConfirm] = useState(false);
 
@@ -72,11 +76,23 @@ const SociosPanel = () => {
   const handleAdelantoChange = (idx, value) => {
     setAdelantos(prev => prev.map((a, i) => i === idx ? { ...a, amount: parseFloat(value) || 0, date: new Date().toISOString().slice(0,10) } : a));
   };
-  const handleCargarAdelanto = async (idx) => {
-    // Guardar adelanto en memoria y en Firestore, usando el monto actual
-    const nuevos = adelantos.map((a, i) => i === idx ? { ...a, date: new Date().toISOString().slice(0,10), amount: a.amount || 0 } : a);
+  const handleCargarAdelanto = (idx) => {
+    setAdelantoIdx(idx);
+    setAdelantoMonto(adelantos[idx]?.amount || 0);
+    setAdelantoFecha(adelantos[idx]?.date || new Date().toISOString().slice(0,10));
+    setShowAdelantoModal(true);
+  };
+
+  const handleAdelantoModalSave = async () => {
+    const nuevos = adelantos.map((a, i) => i === adelantoIdx ? { ...a, amount: parseFloat(adelantoMonto) || 0, date: adelantoFecha } : a);
     setAdelantos(nuevos);
     await archiveAdelantos(nuevos, getCurrentYearMonth());
+    setShowAdelantoModal(false);
+    setAdelantoIdx(-1);
+  };
+  const handleAdelantoModalCancel = () => {
+    setShowAdelantoModal(false);
+    setAdelantoIdx(-1);
   };
   const handleEditAdelanto = (idx) => {
     setEditIdx(idx);
@@ -124,10 +140,16 @@ const SociosPanel = () => {
               </div>
               <div className="mb-2">
                 <p className="text-xs text-gray-400">Adelanto:</p>
-                <p className="text-base text-yellow-300 font-mono">${adelanto.toFixed(2)}</p>
+                {adelantos[idx]?.date ? (
+                  <div className="text-base text-yellow-300 font-mono">
+                    {adelantos[idx].date} - ${adelantos[idx].amount.toFixed(2)}
+                  </div>
+                ) : (
+                  <p className="text-base text-yellow-300 font-mono">-</p>
+                )}
               </div>
               <div className="mb-4">
-                <p className="text-xs text-gray-400">Saldo:</p>
+                <p className="text-xs text-gray-400">Saldo del mes a cobrar:</p>
                 <p className={`text-lg font-bold ${saldo < 0 ? 'text-red-400' : 'text-green-400'}`}>${saldo.toFixed(2)}</p>
               </div>
               {editIdx === idx ? (
@@ -143,6 +165,23 @@ const SociosPanel = () => {
                   <button onClick={() => handleEditAdelanto(idx)} className="py-2 text-sm font-medium text-yellow-400 hover:bg-gray-800 transition rounded border border-yellow-500">Editar Adelanto</button>
                 </div>
               )}
+      {showAdelantoModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+          <div className="bg-gray-900 p-6 rounded-lg shadow-lg flex flex-col items-center min-w-[300px]">
+            <div className="text-white mb-4 font-bold text-lg">Adelantar pago a {socios[adelantoIdx]?.name}</div>
+            <label className="text-gray-300 mb-2 w-full">Fecha:
+              <input type="date" value={adelantoFecha} onChange={e => setAdelantoFecha(e.target.value)} className="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white" />
+            </label>
+            <label className="text-gray-300 mb-4 w-full">Monto:
+              <input type="number" value={adelantoMonto} onChange={e => setAdelantoMonto(e.target.value)} className="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white" />
+            </label>
+            <div className="flex gap-4 mt-2">
+              <button onClick={handleAdelantoModalSave} className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded">Guardar</button>
+              <button onClick={handleAdelantoModalCancel} className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded">Cancelar</button>
+            </div>
+          </div>
+        </div>
+      )}
             </div>
           );
         })}
